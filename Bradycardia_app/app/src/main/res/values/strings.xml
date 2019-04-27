@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">Bradycardia</string>
+    <string name="patient_prompt">Choose a Patient</string>
+
+    <string-array name="patient_arrays">
+        <item>Patient 1</item>
+        <item>Patient 2</item>
+        <item>Patient 3</item>
+        <item>Patient 4</item>
+    </string-array>
+
+    <string name="model_prompt">Choose a Machine Learning Model</string>
+
+    <string-array name="model_arrays">
+        <item>Decision Trees</item>
+        <item>SVM</item>
+        <item>Naive Bayes</item>
+        <item>k-Nearest Neighbor</item>
+    </string-array>
+
+</resources>
