@@ -44,16 +44,12 @@
             weight_vector_svm = SVMModel.Beta;
             
             bias_svm = SVMModel.Bias;
-            
+             b = glmfit(trainingset,bradicardia(1:20),'binomial','link','logit');
+             z = b(1) + (testset * b(2));
             %ans = weight_vector_svm*59+bias_svm
-            tree_model = fitctree(trainingset,bradicardia(1:20));
-            CNB_model = fitcnb(trainingset,bradicardia(1:20));
-            CKNN_model = fitcknn(trainingset,bradicardia(1:20));
             
             svm_fit_data = predict(SVMModel,testset);
-            tree_fit_data = predict(tree_model,testset);
-            CNB_fit_data = predict(CNB_model,testset);
-            CKNN_fit_data = predict(CKNN_model,testset);
+ 
             
             
         end
