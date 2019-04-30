@@ -3,53 +3,45 @@ data(:,3)=[];
 
 [index peaks] = RPeakDetection(data(:,2));
 t=1;
-list=[]
-rowlength=[]
-count=0
+list=[];
+rowlength=[];
+count=0;
 for i= 1:1:size(peaks,1)
     if(index(1,i)<=t*128*60)
-        list=[list,index(1,i)]
-        count=count+1
+        list=[list,index(1,i)];
+        count=count+1;
     else
         t=t+1;
-        rowlength=[rowlength;count]
-        list=[]
-        list=[list,index(1,i)]
-        count=1
+        rowlength=[rowlength;count];
+        list=[];
+        list=[list,index(1,i)];
+        count=1;
     end
 end
 
-bradicardia=[]
+bradicardia=[];
 
 %csvwrite("Patient_272.csv",rowlength);
 for i=1:1:29
-    if rowlength(i,1)<60
-        bradicardia=[bradicardia,1]
-    else
-        bradicardia=[bradicardia,0]
-    end
+if rowlength(i,1)<60
+    bradicardia=[bradicardia,1];
+else
+    bradicardia=[bradicardia,0];
 end
-bradicardia = bradicardia'
+bradicardia = bradicardia';
 
-csvwrite("Labels_483.csv", bradicardia);
-trainingset= rowlength(1:20)
+trainingset = rowlength(1:20);
 
-testset=rowlength(21:29)
+testset = rowlength(21:size(rowlength,1));
 
-SVMModel = fitcsvm(trainingset,bradicardia(1:20))
+SVMModel = fitcsvm(trainingset,bradicardia(1:20));
 
-weight_vector_svm=SVMModel.Beta
+weight_vector_svm = SVMModel.Beta;
 
-bias_svm=SVMModel.Bias
-
+bias_svm = SVMModel.Bias;
+b = glmfit(trainingset,bradicardia(1:20),'binomial','link','logit');
+z = b(1) + (testset * b(2));
 %ans = weight_vector_svm*59+bias_svm
+
+csvwrite("Z_483.csv",z)
 svm_fit_data = predict(SVMModel,testset);
-
-tree_model = fitctree(trainingset,bradicardia(1:20));
-tree_fit_data = predict(tree_model,testset);
-
-CNB_model = fitcnb(trainingset,bradicardia(1:20));
-CNB_fit_data = predict(CNB_model,testset);
-
-CKNN_model = fitcknn(trainingset,bradicardia(1:20));
-CKNN_fit_data = predict(CKNN_model,testset);
