@@ -1,4 +1,4 @@
-data = importdata('ekg_raw_16272.dat');
+data = importdata('ekg_raw_16483.dat');
 data(:,3)=[];
 
 [index peaks] = RPeakDetection(data(:,2));
@@ -21,6 +21,7 @@ end
 
 bradicardia=[]
 
+%csvwrite("Patient_272.csv",rowlength);
 for i=1:1:29
     if rowlength(i,1)<60
         bradicardia=[bradicardia,1]
@@ -30,6 +31,7 @@ for i=1:1:29
 end
 bradicardia = bradicardia'
 
+csvwrite("Labels_483.csv", bradicardia);
 trainingset= rowlength(1:20)
 
 testset=rowlength(21:29)

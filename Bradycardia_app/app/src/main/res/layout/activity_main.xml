@@ -54,8 +54,8 @@
             android:orientation="horizontal">
 
             <Button
-                android:id="@+id/classify_button"
-                android:text="Classify"
+                android:id="@+id/detect_button"
+                android:text="Detect"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
 

@@ -38,7 +38,7 @@
             trainingset = rowlength(1:20);
             
             testset = rowlength(21:size(rowlength,1));
-            
+            disp(testset)
             SVMModel = fitcsvm(trainingset,bradicardia(1:20));
             
             weight_vector_svm = SVMModel.Beta;

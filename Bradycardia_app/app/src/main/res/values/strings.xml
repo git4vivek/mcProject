@@ -12,10 +12,10 @@
     <string name="model_prompt">Choose a Machine Learning Model</string>
 
     <string-array name="model_arrays">
-        <item>Decision Trees</item>
+        <item>Logistic Regression</item>
         <item>SVM</item>
-        <item>Naive Bayes</item>
-        <item>k-Nearest Neighbor</item>
+        <item>K-Nearest Neighbor</item>
+        <item>K-Means</item>
     </string-array>
 
 </resources>
