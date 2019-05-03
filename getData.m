@@ -1,4 +1,4 @@
-data = importdata('ekg_raw_16483.dat');
+data = importdata('ekg_raw_16272.dat');
 data(:,3)=[];
 
 [index peaks] = RPeakDetection(data(:,2));
@@ -28,6 +28,15 @@ if rowlength(i,1)<60
 else
     bradicardia=[bradicardia,0];
 end
+end
+
+detect = 0
+for i=1:1:26
+if((rowlength(i,1) + rowlength(i,2) + rowlength(i,3))/3)<60
+     detect = 1
+end
+end
+
 bradicardia = bradicardia';
 
 trainingset = rowlength(1:20);
@@ -43,5 +52,5 @@ b = glmfit(trainingset,bradicardia(1:20),'binomial','link','logit');
 z = b(1) + (testset * b(2));
 %ans = weight_vector_svm*59+bias_svm
 
-csvwrite("Z_483.csv",z)
+csvwrite("Z_272.csv",z)
 svm_fit_data = predict(SVMModel,testset);

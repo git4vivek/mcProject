@@ -68,6 +68,19 @@
 
         </LinearLayout>
 
-
+        <TextView
+            android:id="@+id/simpleTextView"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textSize="20sp"
+            android:gravity="center_horizontal"/> <!--center horizontal gravity-->
+        <TextView
+            android:id="@+id/simpleTextView2"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textSize="20sp"
+            android:gravity="center_horizontal"/> <!--center horizontal gravity-->
     </LinearLayout>
 </ScrollView>

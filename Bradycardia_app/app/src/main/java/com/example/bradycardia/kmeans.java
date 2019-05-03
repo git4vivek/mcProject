@@ -3,21 +3,28 @@ package com.example.bradycardia;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Scanner;
+
+import android.content.res.AssetManager;
+import android.util.Log;
 
 public class kmeans {
 
     String filename;
+    static AssetManager mgr;
 
-    public kmeans(String fileName) throws IOException {
+    double[][] points_data;
+    static ArrayList<Integer>[] clusterList;
+    public kmeans(String fileName, AssetManager Mgr) throws IOException {
         //Scanner sc = new Scanner(System.in);
         //String filePath = "";
         //System.out.print("Enter the name of the CSV file: ");
         //String fileName = sc.nextLine();
 
         // Open the file just to count the number of records
-
+        mgr = Mgr;
         int records = getRecords(fileName);
 
         //System.out.print("Enter the index of the X-attribute: ");
@@ -26,11 +33,11 @@ public class kmeans {
         int yAttribute = 1;
 
         // Open file again to read the records
-        double[][] points = new double[records][2];
-        readRecords(fileName, points, xAttribute, yAttribute);
+        points_data = new double[records][2];
+        readRecords(fileName, points_data, xAttribute, yAttribute);
 
         // Sort the points based on X-coordinate values
-        sortPointsByX(points);
+        sortPointsByX(points_data);
 
         // Input the number of iterations
 //		System.out.print("Enter the maximum number of iterations: ");
@@ -43,8 +50,8 @@ public class kmeans {
         // Calculate initial means
         double[][] means = new double[clusters][2];
         for(int i=0; i<means.length; i++) {
-            means[i][0] = points[(int) (Math.floor((records*1.0/clusters)/2) + i*records/clusters)][0];
-            means[i][1] = points[(int) (Math.floor((records*1.0/clusters)/2) + i*records/clusters)][1];
+            means[i][0] = points_data[(int) (Math.floor((records*1.0/clusters)/2) + i*records/clusters)][0];
+            means[i][1] = points_data[(int) (Math.floor((records*1.0/clusters)/2) + i*records/clusters)][1];
         }
 
         // Create skeletons for clusters
@@ -57,13 +64,13 @@ public class kmeans {
         }
 
         // Make the initial clusters
-        formClusters(oldClusters, means, points);
+        formClusters(oldClusters, means, points_data);
         int iterations = 0;
 
         // Showtime
         while(true) {
-            updateMeans(oldClusters, means, points);
-            formClusters(newClusters, means, points);
+            updateMeans(oldClusters, means, points_data);
+            formClusters(newClusters, means, points_data);
 
             iterations++;
 
@@ -75,17 +82,19 @@ public class kmeans {
 
         // Display the output
         System.out.println("\nThe final clusters are:");
-        displayOutput(oldClusters, points);
+        clusterList = oldClusters;
+        displayOutput(oldClusters, points_data);
         System.out.println("\nIterations taken = " + iterations);
-        double pt = 90.0;
-        System.out.println("Final cluster for point "+ pt +" is  "+ predictclass(oldClusters, points, pt));
+        //double pt = 90.0;
+        //System.out.println("Final cluster for point "+ pt +" is  "+ predictclass(pt));
+
 
         //sc.close();
     }
 
     static int getRecords(String fileName) throws IOException {
         int records = 0;
-        BufferedReader br = new BufferedReader(new FileReader(fileName));
+        BufferedReader br = new BufferedReader(new InputStreamReader(mgr.open(fileName)));
         while (br.readLine() != null)
             records++;
 
@@ -94,7 +103,7 @@ public class kmeans {
     }
 
     static void readRecords(String fileName, double[][] points, int xAttribute, int yAttribute) throws IOException {
-        BufferedReader br = new BufferedReader(new FileReader(fileName));
+        BufferedReader br = new BufferedReader(new InputStreamReader(mgr.open(fileName)));
         String line;
         int i = 0;
         while ((line = br.readLine()) != null) {
@@ -178,9 +187,10 @@ public class kmeans {
         }
     }
 
-    public int predictclass(ArrayList<Integer>[] clusterList, double[][] points, double x1)
+    public int predictclass(double x1)
     {
-        int res=-1;
+        Log.d("kmeans:","predict kmeans");
+        int res=0;
         double avg = 0.0;
         double centroids[] = new double[2];
         for(int i=0; i<2; i++) {
@@ -190,23 +200,28 @@ public class kmeans {
             for(int index: clusterList[i])
             {
 
-                avg+=points[index][0];
+                avg+=points_data[index][0];
+                System.out.println(points_data[index][0]);
             }
             centroids[i]= avg/(double)sz;
 
         }
-        System.out.println(centroids[0] + "     " + centroids[1]);
+        System.out.println("centroids[0]");
+        System.out.println(centroids[0]);
+        System.out.println(centroids[1]);
+        System.out.println(x1);
+        Log.d("kmeans:",centroids.toString());
 
-        if (centroids[0] < centroids[1])
+        if (centroids[0] < centroids[1] && centroids[0] < 60)
         {
-            if(Math.abs(centroids[0] - x1)> Math.abs(centroids[1] - x1))
+            if(Math.abs(centroids[0] - x1)< Math.abs(centroids[1] - x1))
                 res= 1;
             else
                 res=0;
         }
-        else
+        else if(centroids[0] > centroids[1] && centroids[1] < 60)
         {
-            if(Math.abs(centroids[0] - x1)< Math.abs(centroids[1] - x1))
+            if(Math.abs(centroids[0] - x1)> Math.abs(centroids[1] - x1))
                 res= 1;
             else
                 res=0;

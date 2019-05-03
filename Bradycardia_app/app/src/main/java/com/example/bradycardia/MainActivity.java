@@ -43,6 +43,8 @@ public class MainActivity extends AppCompatActivity {
 
     String patient;
     String model;
+    TextView textView;
+    TextView textView2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,6 +90,10 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Log.d("Detect:", "Button clicked");
+                textView = (TextView) findViewById(R.id.simpleTextView);
+                textView.setText(""); //set text for text view
+                textView2 = (TextView) findViewById(R.id.simpleTextView);
+                textView2.setText(""); //set text for text view
                 Detect(patient, model);
             }
         });
@@ -96,6 +102,10 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Log.d("Predict:", "Button clicked");
+                textView = (TextView) findViewById(R.id.simpleTextView);
+                textView.setText(""); //set text for text view
+                textView2 = (TextView) findViewById(R.id.simpleTextView);
+                textView2.setText(""); //set text for text view
                 Predict(patient, model);
             }
         });
@@ -124,9 +134,33 @@ public class MainActivity extends AppCompatActivity {
         Log.d("FileRead:",heartrates.toString());
         return heartrates;
     }
+    private ArrayList<Double> getz(String filename)
+    {
+
+        String line;
+        ArrayList<Double> heartrates = new ArrayList<Double>();
+        BufferedReader reader = null;
+        try {
+            reader = new BufferedReader(
+                    new InputStreamReader(getAssets().open(filename)));
+
+            while ((line = reader.readLine()) != null) {
+                heartrates.add(Double.parseDouble(line));
+
+            }
+        }
+        catch (IOException e)
+        {
+
+        }
+
+        Log.d("FileRead:",heartrates.toString());
+        return heartrates;
+    }
 
     private  int predictSVM(List<Integer> heartrates)
     {
+        //ArrayList<Integer> predict = new ArrayList<Integer>();
         int predict = 0;
         int y;
         for(int i =0 ;i < heartrates.size();i++)
@@ -247,29 +281,83 @@ public class MainActivity extends AppCompatActivity {
                 }
                 if (avg < 60 && heartrates.get(i) < 60) {
                     brady_count++;
-                    tn = tn + 1;
+                    tp = tp + 1;
                 }
                 if (avg > 60 && heartrates.get(i) > 60) {
 
-                    tp = tp + 1;
+                    tn = tn + 1;
                 }
             }
         }
 
         if (brady_count > 0)
         {
+            textView = (TextView) findViewById(R.id.simpleTextView);
+            textView.setText(" BradyCardia is Detected");
             Log.d("Detect:","Brady Detected");
             Log.d("Detect:","fp:" + Integer.toString(fp) + "fn:" + Integer.toString(fn)
                             + "tp:" + Integer.toString(tp) + "tn:" + Integer.toString(tn));
         }
         else
         {
+            textView = (TextView) findViewById(R.id.simpleTextView);
+            textView.setText(" BradyCardia is NOT Detected");
             Log.d("Detect:","Brady NOT Detected");
         }
 
         long endTime = System.currentTimeMillis();
         long elapsedTime = endTime - startTime;
         Log.d("Detect:",Integer.toString((int)elapsedTime));
+        //set text for text view
+        textView2 = (TextView) findViewById(R.id.simpleTextView2);
+        textView2.setText("False Positives: " + Integer.toString(fp) + "\nFalse Negatives: " + Integer.toString(fn)
+                + "\nTrue Positives: " + Integer.toString(tp) + "\nTrue Negatives: " + Integer.toString(tn)
+                    + "\nElapsed Time: " + Long.toString(elapsedTime) + "ms");
+
+    }
+
+    private int predictKMeans(String filename, List<Integer> test)
+    {
+        int predict = 0;
+
+        Log.d("predictKMeans:","entered");
+        try {
+            kmeans x = new kmeans(filename, getAssets());
+            for(int i=0; i<test.size();i++)
+            {
+                Log.d("predictKMeans:","testing");
+                predict = x.predictclass(test.get(i));
+                if (predict ==1)
+                {
+                    return 1;
+                }
+            }
+        }
+        catch (IOException e)
+        {
+
+        }
+
+
+        return predict;
+    }
+
+    private int predictLogistic(String filename, List<Integer> test)
+    {
+        ArrayList<Double> z_list = null;
+        z_list = getz(filename);
+        int predict = 0;
+        double val;
+        for(int i =0; i<z_list.size();i++)
+        {
+            val = 1/(1+ Math.pow(Math.exp(1.0),-1 * z_list.get(i)));
+            if(val > 0.9)
+            {
+                predict = 1;
+                return predict;
+            }
+        }
+        return predict;
     }
 
     public void Predict(String patient, String model)
@@ -278,27 +366,37 @@ public class MainActivity extends AppCompatActivity {
         ArrayList<Integer> labels = null;
         List<Integer> test = null;
         int predict = 0;
+        String filename = "";
+        String filename_Z = "";
+        long startTime = System.currentTimeMillis();
         switch(patient) {
             case ("Patient 1"): {
-
+                filename = "Kmeans_Patient_272.csv";
+                filename_Z = "Z_272.csv";
                 heartrates = getheartrates("Patient_272.csv");
                 labels = getheartrates("Labels_272.csv");
                 test = heartrates.subList(20,29);
                 break;
             }
             case ("Patient 2"): {
+                filename = "Kmeans_Patient_273.csv";
+                filename_Z = "Z_273.csv";
                 heartrates = getheartrates("Patient_273.csv");
                 labels = getheartrates("Labels_273.csv");
                 test = heartrates.subList(20,29);
                 break;
             }
             case ("Patient 3"): {
+                filename = "Kmeans_Patient_420.csv";
+                filename_Z = "Z_420.csv";
                 heartrates = getheartrates("Patient_420.csv");
                 labels = getheartrates("Labels_420.csv");
                 test = heartrates.subList(20,29);
                 break;
             }
             case ("Patient 4"): {
+                filename = "Kmeans_Patient_483.csv";
+                filename_Z = "Z_483.csv";
                 heartrates = getheartrates("Patient_483.csv");
                 labels = getheartrates("Labels_483.csv");
                 test = heartrates.subList(20,29);
@@ -320,15 +418,40 @@ public class MainActivity extends AppCompatActivity {
                     predict = predictKNN(heartrates.subList(0,19), labels.subList(0,19), test);
                     break;
                 }
-
+                case("K-Means"):
+                {
+                    predict = predictKMeans(filename, test);
+                    break;
+                }
+                case("Logistic Regression"):
+                {
+                    predict = predictLogistic(filename_Z, test);
+                    break;
+                }
 
             }
         }
 
+        long endTime = System.currentTimeMillis();
+        long elapsedtime = endTime - startTime;
         if (predict == 1)
+        {
             Log.d("Predict:", "Brady Predicted");
-        else
-            Log.d("Predict:", "Brady NOT Predicted");
+            textView = (TextView) findViewById(R.id.simpleTextView);
+            textView.setText( model + "\nBradyCardia IS Predicted"); //set text for text view
 
+            //textView2.setText("");
+        }
+        else
+        {
+            Log.d("Predict:", "Brady NOT Predicted");
+            textView = (TextView) findViewById(R.id.simpleTextView);
+            textView.setText(model + "\nBradyCardia is NOT Predicted"); //set text for text view
+            textView2 = (TextView) findViewById(R.id.simpleTextView2);
+            //textView2.setText("");
+        }
+
+        textView2 = (TextView) findViewById(R.id.simpleTextView2);
+        textView2.setText("Elapsed Time: " + Long.toString(elapsedtime) +"ms");
     }
 }
