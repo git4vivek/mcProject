@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Bradycardia</string>
+    <string name="app_name">Bradycardia_Group24</string>
     <string name="patient_prompt">Choose a Patient</string>
 
     <string-array name="patient_arrays">
