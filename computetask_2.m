@@ -33,9 +33,9 @@ for fileitr = 1:length(files)
             count=1;
         end
     end
-    sampledata=[];
+    three_min_avg=[];
     for i= 1:1:size(bpm_array,1)-2
-        sampledata=[sampledata; round((bpm_array(i)+ bpm_array(i+1)+ bpm_array(i+2))/3)];
+        three_min_avg=[three_min_avg; round((bpm_array(i)+ bpm_array(i+1)+ bpm_array(i+2))/3)];
     end
     
     % Plots Begin
@@ -55,14 +55,14 @@ for fileitr = 1:length(files)
     count_brady = 0;
     fp = 0; tp = 0; fn = 0; tn = 0;
     for i= 1:1:size(bpm_array,1)-2
-        if ((sampledata(i)<60) && (bpm_array(i)>= 60))
+        if ((three_min_avg(i)<60) && (bpm_array(i)>= 60))
             fp = fp + 1;
             bradicardia=[bradicardia,0];
-        elseif ((sampledata(i)<60) && (bpm_array(i)<60))
+        elseif ((three_min_avg(i)<60) && (bpm_array(i)<60))
             tp = tp + 1;
             count_brady = count_brady + 1;
             bradicardia=[bradicardia,1];
-        elseif ((sampledata(i)>= 60) && (bpm_array(i)<60))
+        elseif ((three_min_avg(i)>= 60) && (bpm_array(i)<60))
             fn = fn + 1;
             bradicardia=[bradicardia,0];
         else
