@@ -1,9 +1,14 @@
 warning off;
 files = dir('*.dat');
-names_acc={'Person_1','Person_2','Person_3','Person_4'};
+names_acc={'Patient 1','Patient 2','Patient 3','Patient 4'};
 
 TruthTablewithPerformance = [];
 Bradycardia_table = [];
+global SVMModel
+global weight_vector_svm 
+global bias_svm
+global Centroids
+global CKNN_model
 for fileitr = 1:length(files)
     f1 = strcat(files(fileitr).folder,'\',files(fileitr).name);
     %     disp(f1)
@@ -46,12 +51,14 @@ for fileitr = 1:length(files)
     legend('BPM', 'threshold')
     
     % Plots End
+    count_brady = 0;
     fp = 0; tp = 0; fn = 0; tn = 0;
     for i= 1:1:size(bpm_array,1)-2
         if ((sampledata(i)<60) && (bpm_array(i)>= 60))
             fp = fp + 1;
         elseif ((sampledata(i)<60) && (bpm_array(i)<60))
             tp = tp + 1;
+            count_brady = count_brady + 1;
         elseif ((sampledata(i)>= 60) && (bpm_array(i)<60))
             fn = fn + 1;
         else
@@ -64,9 +71,15 @@ for fileitr = 1:length(files)
     F1 = 2*tp/(2*tp+fp+fn);
     Accuracy = (tp+tn)/(tp+tn+fp+fn);
     
-    TruthTablewithPerformance = [TruthTablewithPerformance; [tn,fp,fn,tp,Precision,Recall,F1,Accuracy]];
-    X = sprintf('Detection for %s with Performance Metrics: tn %d, fp %d, fn %d, tp %d, Precision %d, Recall %d, F1 %d, Accuracy %d',names_acc{fileitr},tn,fp,fn,tp,Precision,Recall,F1,Accuracy);
-    disp(X)
+    TruthTablewithPerformance = [TruthTablewithPerformance; [tn,fp,fn,tp,Accuracy]];
+    if(count_brady > 0)
+        X = sprintf('Bradycardia detected');
+    else
+        X = sprintf('Bradycardia NOT detected');
+    end
+    disp(X);
+    X = sprintf('Detection for %s with Performance Metrics: tn %d, fp %d, fn %d, tp %d, Accuracy %d',names_acc{fileitr},tn,fp,fn,tp,Accuracy);
+    disp(X);
     
     bradicardia=[];
     
@@ -88,21 +101,27 @@ for fileitr = 1:length(files)
     
     
     z = CLR_model(1) + (testset * CLR_model(2));
-    z = 1 ./(1 + exp(-z));
+    %z = 1 ./(1 + exp(-z));
+    z_calculate = 1 ./(1 + exp(-z));
     
+    CLR_fit_data =[];
+    for i=1:1:size(z_calculate,1)
+        if(z_calculate(i)<0.9)
+            CLR_fit_data = [CLR_fit_data;0];
+        else
+            CLR_fit_data = [CLR_fit_data;1];
+            
+        end
+    end
+    
+    %Training the models
     if files(fileitr).name == "ekg_raw_16272.dat"
-        [idx,C]=kmeans(bpm_array(1:20),2)
-        sprintf('Centroids: %s',C);
-        
-        SVMModel = fitcsvm(trainingset,bradicardia(1:20));
-    
-    weight_vector_svm = SVMModel.Beta;
-    
-    bias_svm = SVMModel.Bias;
-    
-    %ans = weight_vector_svm*59+bias_svm
-    %tree_model = fitctree(trainingset,bradicardia(1:20));
-    CKNN_model = fitcknn(trainingset,bradicardia(1:20));
+        [idx,Centroids]=kmeans(bpm_array(1:20),2);
+        sprintf('Centroids: %s',Centroids);        
+        SVMModel = fitcsvm(trainingset,bradicardia(1:20));    
+        weight_vector_svm = SVMModel.Beta;    
+        bias_svm = SVMModel.Bias;    
+        CKNN_model = fitcknn(trainingset,bradicardia(1:20));
     end
     
     brady = [];
@@ -115,19 +134,19 @@ for fileitr = 1:length(files)
         brady=[brady,'N'];
     end
     
-    disp(X)
+    disp(X);
     
-    %{
-    tree_fit_data = predict(tree_model,testset);
-    if size(find(tree_fit_data),1)>0
-        X = sprintf('Prediction by Decision Tree for %s if BradyCardia? %s',names_acc{fileitr},'Yes');
+    [~,idx_test] = pdist2(Centroids,testset,'euclidean','Smallest',1);
+    %disp(idx_test);
+    if size(find(idx_test' == 1),1)>0
+        X = sprintf('Prediction by K-Means for %s if BradyCardia? %s',names_acc{fileitr},'Yes');
         brady=[brady,'Y'];
     else
-        X = sprintf('Prediction by Decision Tree for %s if BradyCardia? %s',names_acc{fileitr},'No');
+        X = sprintf('Prediction by K-Means for %s if BradyCardia? %s',names_acc{fileitr},'No');
         brady=[brady,'N'];
     end
-    disp(X)
-    %}
+    disp(X);
+
     CKNN_fit_data = predict(CKNN_model,testset);
     if size(find(CKNN_fit_data),1)>0
         X = sprintf('Prediction by KNN for %s if BradyCardia? %s',names_acc{fileitr},'Yes');
@@ -136,17 +155,18 @@ for fileitr = 1:length(files)
         X = sprintf('Prediction by KNN for %s if BradyCardia? %s',names_acc{fileitr},'No');
         brady=[brady,'N'];
     end
-    
-%     CLR_fit_data = predict(CLR_model,testset);
-%     if size(find(CLR_fit_data),1)>0
-%         X = sprintf('Prediction by Logistic Regression for %s if BradyCardia? %s',names_acc{fileitr},'Yes');
-%         brady=[brady,'Y'];
-%     else
-%         X = sprintf('Prediction by Logistic Regression for %s if BradyCardia? %s',names_acc{fileitr},'No');
-%         brady=[brady,'N'];
-%     end
-%     disp(X)
-%     disp(' ')
+    disp(X);
+
+    if size(find(CLR_fit_data),1)>0
+        X = sprintf('Prediction by Logistic Regression for %s if BradyCardia? %s',names_acc{fileitr},'Yes');
+        brady=[brady,'Y'];
+    else
+        X = sprintf('Prediction by Logistic Regression for %s if BradyCardia? %s',names_acc{fileitr},'No');
+        brady=[brady,'N'];
+    end
+    disp(X);
+    disp(' ');
     Bradycardia_table = [Bradycardia_table;brady];
+    
 end
 xlswrite("Bradycardia_results",Bradycardia_table);
