@@ -1,3 +1,4 @@
+warning off;
 files = dir('*.dat');
 names_acc={'Person_1','Person_2','Person_3','Person_4'};
 
@@ -52,7 +53,7 @@ for fileitr = 1:length(files)
         elseif ((sampledata(i)<60) && (bpm_array(i)<60))
             tp = tp + 1;
         elseif ((sampledata(i)>= 60) && (bpm_array(i)<60))
-            tp = tp + 1;
+            fn = fn + 1;
         else
             tn = tn + 1;
         end
@@ -82,19 +83,29 @@ for fileitr = 1:length(files)
     
     testset = bpm_array(21:size(bpm_array,1));
     
-    SVMModel = fitcsvm(trainingset,bradicardia(1:20));
+    
+    CLR_model = glmfit(trainingset,bradicardia(1:20),'binomial','link','logit');
+    
+    
+    z = CLR_model(1) + (testset * CLR_model(2));
+    z = 1 ./(1 + exp(-z));
+    
+    if files(fileitr).name == "ekg_raw_16272.dat"
+        [idx,C]=kmeans(bpm_array(1:20),2)
+        sprintf('Centroids: %s',C);
+        
+        SVMModel = fitcsvm(trainingset,bradicardia(1:20));
     
     weight_vector_svm = SVMModel.Beta;
     
     bias_svm = SVMModel.Bias;
     
     %ans = weight_vector_svm*59+bias_svm
-    tree_model = fitctree(trainingset,bradicardia(1:20));
-    CNB_model = fitcnb(trainingset,bradicardia(1:20));
+    %tree_model = fitctree(trainingset,bradicardia(1:20));
     CKNN_model = fitcknn(trainingset,bradicardia(1:20));
+    end
     
     brady = [];
-    
     svm_fit_data = predict(SVMModel,testset);
     if size(find(svm_fit_data),1)>0
         X = sprintf('Prediction by SVM for %s if BradyCardia? %s',names_acc{fileitr},'Yes');
@@ -103,9 +114,10 @@ for fileitr = 1:length(files)
         X = sprintf('Prediction by SVM for %s if BradyCardia? %s',names_acc{fileitr},'No');
         brady=[brady,'N'];
     end
+    
     disp(X)
     
-    
+    %{
     tree_fit_data = predict(tree_model,testset);
     if size(find(tree_fit_data),1)>0
         X = sprintf('Prediction by Decision Tree for %s if BradyCardia? %s',names_acc{fileitr},'Yes');
@@ -115,19 +127,26 @@ for fileitr = 1:length(files)
         brady=[brady,'N'];
     end
     disp(X)
-    
-    CNB_fit_data = predict(CNB_model,testset);
-    
+    %}
     CKNN_fit_data = predict(CKNN_model,testset);
-    if size(find(svm_fit_data),1)>0
+    if size(find(CKNN_fit_data),1)>0
         X = sprintf('Prediction by KNN for %s if BradyCardia? %s',names_acc{fileitr},'Yes');
         brady=[brady,'Y'];
     else
         X = sprintf('Prediction by KNN for %s if BradyCardia? %s',names_acc{fileitr},'No');
         brady=[brady,'N'];
     end
-    disp(X)
-    disp(' ')
+    
+%     CLR_fit_data = predict(CLR_model,testset);
+%     if size(find(CLR_fit_data),1)>0
+%         X = sprintf('Prediction by Logistic Regression for %s if BradyCardia? %s',names_acc{fileitr},'Yes');
+%         brady=[brady,'Y'];
+%     else
+%         X = sprintf('Prediction by Logistic Regression for %s if BradyCardia? %s',names_acc{fileitr},'No');
+%         brady=[brady,'N'];
+%     end
+%     disp(X)
+%     disp(' ')
     Bradycardia_table = [Bradycardia_table;brady];
 end
 xlswrite("Bradycardia_results",Bradycardia_table);
