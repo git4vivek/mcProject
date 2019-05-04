@@ -51,21 +51,34 @@ for fileitr = 1:length(files)
     legend('BPM', 'threshold')
     
     % Plots End
+    bradicardia=[];
     count_brady = 0;
     fp = 0; tp = 0; fn = 0; tn = 0;
     for i= 1:1:size(bpm_array,1)-2
         if ((sampledata(i)<60) && (bpm_array(i)>= 60))
             fp = fp + 1;
+            bradicardia=[bradicardia,0];
         elseif ((sampledata(i)<60) && (bpm_array(i)<60))
             tp = tp + 1;
             count_brady = count_brady + 1;
+            bradicardia=[bradicardia,1];
         elseif ((sampledata(i)>= 60) && (bpm_array(i)<60))
             fn = fn + 1;
+            bradicardia=[bradicardia,0];
         else
             tn = tn + 1;
+            bradicardia=[bradicardia,0];
         end
     end
     
+    x = size(bpm_array,1)-2;
+    if( bradicardia(x) == 1)
+        bradicardia(x+1) =1;
+        bradicardia(x+2) =1;
+    else
+        bradicardia(x+1) =0;
+        bradicardia(x+2) =0;
+    end
     Precision = tp / (tp + fp );
     Recall = tp / ( tp + fn );
     F1 = 2*tp/(2*tp+fp+fn);
@@ -73,25 +86,36 @@ for fileitr = 1:length(files)
     
     TruthTablewithPerformance = [TruthTablewithPerformance; [tn,fp,fn,tp,Accuracy]];
     if(count_brady > 0)
-        X = sprintf('Bradycardia detected');
+        X = sprintf('Bradycardia detected for %s',names_acc{fileitr});
     else
-        X = sprintf('Bradycardia NOT detected');
+        X = sprintf('Bradycardia NOT detected for %s',names_acc{fileitr});
     end
     disp(X);
     X = sprintf('Detection for %s with Performance Metrics: tn %d, fp %d, fn %d, tp %d, Accuracy %d',names_acc{fileitr},tn,fp,fn,tp,Accuracy);
     disp(X);
     
-    bradicardia=[];
     
-    for i=1:1:29
-        if bpm_array(i,1)<60
-            bradicardia=[bradicardia,1];
-        else
-            bradicardia=[bradicardia,0];
-        end
-    end
+%     bradicardia=[];
+%     
+%     for i=1:1:29
+%         if bpm_array(i,1)<60
+%             bradicardia=[bradicardia,1];
+%         else
+%             bradicardia=[bradicardia,0];
+%         end
+%     end 
     bradicardia = bradicardia';
     
+    %disp(bradicardia);
+    if files(fileitr).name == "ekg_raw_16272.dat"
+        csvwrite("Labels_272_2.csv",bradicardia);
+    elseif files(fileitr).name == "ekg_raw_16273.dat"
+        csvwrite("Labels_273_2.csv",bradicardia);
+    elseif files(fileitr).name == "ekg_raw_16420.dat"
+        csvwrite("Labels_420_2.csv",bradicardia);
+    else
+        csvwrite("Labels_483_2.csv",bradicardia);
+    end
     trainingset = bpm_array(1:20);
     
     testset = bpm_array(21:size(bpm_array,1));

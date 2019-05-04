@@ -1,5 +1,8 @@
 package com.example.bradycardia;
 
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.BatteryManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -24,6 +27,7 @@ import java.util.ArrayList;
 import java.io.IOException;
 import java.util.List;
 import java.util.Arrays;
+import android.content.Context;
 
 
 
@@ -165,7 +169,7 @@ public class MainActivity extends AppCompatActivity {
         int y;
         for(int i =0 ;i < heartrates.size();i++)
         {
-            y = (-2 * heartrates.get(i)) + 119;
+            y = (-1 * heartrates.get(i)) + 59;
             if (y >= 1)
             {
                 predict = 1;
@@ -205,7 +209,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
 
-            Collections.reverse(distance_list);
+            //Collections.reverse(distance_list);
             Log.d("Predict:",distance_list.toString() );
             int num_brady = 0;
             int num_non = 0;
@@ -293,7 +297,7 @@ public class MainActivity extends AppCompatActivity {
         if (brady_count > 0)
         {
             textView = (TextView) findViewById(R.id.simpleTextView);
-            textView.setText(" BradyCardia is Detected");
+            textView.setText(" Bradycardia is Detected");
             Log.d("Detect:","Brady Detected");
             Log.d("Detect:","fp:" + Integer.toString(fp) + "fn:" + Integer.toString(fn)
                             + "tp:" + Integer.toString(tp) + "tn:" + Integer.toString(tn));
@@ -301,7 +305,7 @@ public class MainActivity extends AppCompatActivity {
         else
         {
             textView = (TextView) findViewById(R.id.simpleTextView);
-            textView.setText(" BradyCardia is NOT Detected");
+            textView.setText(" Bradycardia is NOT Detected");
             Log.d("Detect:","Brady NOT Detected");
         }
 
@@ -320,25 +324,19 @@ public class MainActivity extends AppCompatActivity {
     {
         int predict = 0;
 
+        int brady_centroid = 59;
+        int non_centroid = 71;
+        int brady =0;
         Log.d("predictKMeans:","entered");
-        try {
-            kmeans x = new kmeans(filename, getAssets());
-            for(int i=0; i<test.size();i++)
+        for(int i=0; i<test.size();i++)
             {
                 Log.d("predictKMeans:","testing");
-                predict = x.predictclass(test.get(i));
-                if (predict ==1)
+
+                if(Math.abs(test.get(i) - brady_centroid) < Math.abs(test.get(i) - non_centroid))
                 {
                     return 1;
                 }
             }
-        }
-        catch (IOException e)
-        {
-
-        }
-
-
         return predict;
     }
 
@@ -362,6 +360,18 @@ public class MainActivity extends AppCompatActivity {
 
     public void Predict(String patient, String model)
     {
+       /* Context c = getApplicationContext();
+        IntentFilter ifilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
+        Intent batteryStatus = c.registerReceiver(null, ifilter);
+        int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+        int scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+
+        float batteryPct = level / (float)scale;*/
+
+        BatteryManager mBatteryManager = (BatteryManager)MainActivity.this.getSystemService(Context.BATTERY_SERVICE);
+        int level = mBatteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
+        double mAh_start = (3000 * level * 0.01);
+        //float batteryPct = level / (float)scale;
         ArrayList<Integer> heartrates = null;
         ArrayList<Integer> labels = null;
         List<Integer> test = null;
@@ -374,7 +384,7 @@ public class MainActivity extends AppCompatActivity {
                 filename = "Kmeans_Patient_272.csv";
                 filename_Z = "Z_272.csv";
                 heartrates = getheartrates("Patient_272.csv");
-                labels = getheartrates("Labels_272.csv");
+                labels = getheartrates("Labels_272_2.csv");
                 test = heartrates.subList(20,29);
                 break;
             }
@@ -382,7 +392,7 @@ public class MainActivity extends AppCompatActivity {
                 filename = "Kmeans_Patient_273.csv";
                 filename_Z = "Z_273.csv";
                 heartrates = getheartrates("Patient_273.csv");
-                labels = getheartrates("Labels_273.csv");
+                labels = getheartrates("Labels_273_2.csv");
                 test = heartrates.subList(20,29);
                 break;
             }
@@ -390,7 +400,7 @@ public class MainActivity extends AppCompatActivity {
                 filename = "Kmeans_Patient_420.csv";
                 filename_Z = "Z_420.csv";
                 heartrates = getheartrates("Patient_420.csv");
-                labels = getheartrates("Labels_420.csv");
+                labels = getheartrates("Labels_420_2.csv");
                 test = heartrates.subList(20,29);
                 break;
             }
@@ -398,7 +408,7 @@ public class MainActivity extends AppCompatActivity {
                 filename = "Kmeans_Patient_483.csv";
                 filename_Z = "Z_483.csv";
                 heartrates = getheartrates("Patient_483.csv");
-                labels = getheartrates("Labels_483.csv");
+                labels = getheartrates("Labels_483_2.csv");
                 test = heartrates.subList(20,29);
                 break;
             }
@@ -415,7 +425,9 @@ public class MainActivity extends AppCompatActivity {
                 }
                 case("K-Nearest Neighbor"):
                 {
-                    predict = predictKNN(heartrates.subList(0,19), labels.subList(0,19), test);
+                    ArrayList<Integer> training_data = getheartrates("Patient_272.csv");
+                    ArrayList<Integer> training_labels = getheartrates("Labels_272_2.csv");
+                    predict = predictKNN(training_data.subList(0,19), training_labels.subList(0,19), test);
                     break;
                 }
                 case("K-Means"):
@@ -438,7 +450,7 @@ public class MainActivity extends AppCompatActivity {
         {
             Log.d("Predict:", "Brady Predicted");
             textView = (TextView) findViewById(R.id.simpleTextView);
-            textView.setText( model + "\nBradyCardia IS Predicted"); //set text for text view
+            textView.setText( model + "\nBradycardia IS Predicted"); //set text for text view
 
             //textView2.setText("");
         }
@@ -446,12 +458,16 @@ public class MainActivity extends AppCompatActivity {
         {
             Log.d("Predict:", "Brady NOT Predicted");
             textView = (TextView) findViewById(R.id.simpleTextView);
-            textView.setText(model + "\nBradyCardia is NOT Predicted"); //set text for text view
+            textView.setText(model + "\nBradycardia is NOT Predicted"); //set text for text view
             textView2 = (TextView) findViewById(R.id.simpleTextView2);
             //textView2.setText("");
         }
 
+        level = mBatteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
+        double mAh_end = (3000 * level * 0.01);
+        double mAh_consumed = mAh_start - mAh_end;
         textView2 = (TextView) findViewById(R.id.simpleTextView2);
-        textView2.setText("Elapsed Time: " + Long.toString(elapsedtime) +"ms");
+        textView2.setText("Elapsed Time: " + Long.toString(elapsedtime) +"ms" + "\n Power Consumption: "
+                            +  Double.toString(mAh_consumed) + "mAh");
     }
 }
